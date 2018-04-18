@@ -2,6 +2,7 @@ package caddyconsul
 
 import (
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/hashicorp/consul/api"
@@ -32,10 +33,17 @@ func (s *caddyfile) WatchServices(reload bool) {
 	}
 
 	myservices := make(map[string][]*api.CatalogService)
-	for servicename := range services {
+	for servicename, tags := range services {
 		// Get all instances for this service
-		instances, _, _ := catalog.Service(servicename, "", nil)
-		myservices[servicename] = instances
+		if contain(tags, "gateway") {
+			instances, _, _ := catalog.Service(servicename, "", nil)
+
+			var domain = strings.TrimRight(servicename, "-gateway")
+
+			//keybits := strings.SplitN(servicename, "/", 3)
+			myservices[strings.ToLower(domain)] = instances
+		}
+
 	}
 
 	s.services = myservices
@@ -43,4 +51,13 @@ func (s *caddyfile) WatchServices(reload bool) {
 	if reload {
 		reloadCaddy()
 	}
+}
+
+func contain(tags []string, tag string) bool {
+	for _, v := range tags {
+		if v == tag {
+			return true
+		}
+	}
+	return false
 }

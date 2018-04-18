@@ -3,7 +3,7 @@ package caddyconsul
 import (
 	"fmt"
 	"os"
-	"syscall"
+	//"syscall"
 	"time"
 
 	"github.com/hashicorp/consul/api"
@@ -26,8 +26,8 @@ func reloadCaddy() {
 		fmt.Println("Not reloading since caddy uptime is too short")
 		return
 	}
-	self, _ := os.FindProcess(os.Getpid())
-	self.Signal(syscall.SIGUSR1)
+	//self, _ := os.FindProcess(os.Getpid())
+	//self.Signal(syscall.SIGUSR1)
 }
 
 func consulLoader(serverType string) (caddy.Input, error) {

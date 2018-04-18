@@ -1,12 +1,12 @@
 # Consul Plugin for Caddy
 
-*Forked from https://github.com/brimstone/caddy-consul*
+*Forked from https://github.com/krishamoud/caddy-consul*
 
 ## Installation
 
 ### 1. Get the source
 ```
-go get github.com/krishamoud/caddy-consul
+go get github.com/chenjpu/caddy-consul
 ```
 
 ### 2. Get the Caddy source
@@ -40,7 +40,7 @@ import (
 
 	"github.com/mholt/caddy/caddytls"
 	// This is where other plugins get plugged in (imported)
-	_ "github.com/krishamoud/caddy-consul" // ADD THIS LINE
+	_ "github.com/chenjpu/caddy-consul" // ADD THIS LINE
 )
 ```
 
@@ -68,13 +68,22 @@ Either add your newly built binary to your `$PATH` or just run `./caddy` from wh
 
 ## Example Caddyfile.tmpl
 ```
-{{range $domain, $services := .}}{{$domain}}.example.com {
-  tls /etc/ssl/cert.crt /etc/ssl/star_example_com.key
+{{range $domain, $services := .}} http://{{$domain}}.xxx.com {
+  root /var/www/dev.xxx.com
   gzip
-  proxy / {
-    policy ip_hash
+  proxy /services {
+     header_upstream Host {host}
+     header_upstream X-Real-IP {remote}
+     header_upstream X-Forwarded-For {remote}
+     header_upstream X-Forwarded-Proto {scheme}
+     max_conns 200
+     policy ip_hash
     {{range $key, $service := $services}}upstream {{.Address}}:{{.ServicePort}}
     {{end}}
+  }
+  rewrite / {
+   if {uri} not_starts_with /services
+   to {uri} /
   }
 }
 {{end}}
@@ -83,32 +92,22 @@ Either add your newly built binary to your `$PATH` or just run `./caddy` from wh
 The above will output something like this:
 
 ```
-dashboard.example.com {
-  tls /etc/ssl/cert.crt /etc/ssl/star_example_com.key
+ http://test-dev.xxx.com {
+  root /var/www/dev.xxx.com
   gzip
-  proxy / {
-    policy ip_hash
-    upstream 172.31.17.252:32835
+  proxy /services {
+     header_upstream Host {host}
+     header_upstream X-Real-IP {remote}
+     header_upstream X-Forwarded-For {remote}
+     header_upstream X-Forwarded-Proto {scheme}
+     max_conns 200
+     policy ip_hash
+    upstream 10.110.200.26:23530
 
   }
-}
-league.example.com {
-  tls /etc/ssl/cert.crt /etc/ssl/star_example_com.key
-  gzip
-  proxy / {
-    policy ip_hash
-    upstream 172.31.17.252:32834
-    upstream 172.31.58.45:32837
-
-  }
-}
-todos.example.com {
-  tls /etc/ssl/cert.crt /etc/ssl/star_example_com.key
-  gzip
-  proxy / {
-    policy ip_hash
-    upstream 172.31.17.252:32836
-
+  rewrite / {
+   if {uri} not_starts_with /services
+   to {uri} /
   }
 }
 ```

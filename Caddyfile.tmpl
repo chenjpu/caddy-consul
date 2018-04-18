@@ -1,0 +1,19 @@
+{{range $domain, $services := .}} http://{{$domain}}.fcae.com {
+  root /var/www/dev.fcae.com
+  gzip
+  proxy /services {
+     header_upstream Host {host}
+     header_upstream X-Real-IP {remote}
+     header_upstream X-Forwarded-For {remote}
+     header_upstream X-Forwarded-Proto {scheme}
+     max_conns 200
+     policy ip_hash
+    {{range $key, $service := $services}}upstream {{.Address}}:{{.ServicePort}}
+    {{end}}
+  }
+  rewrite / {
+   if {uri} not_starts_with /services
+   to {uri} /
+  }
+}
+{{end}}
